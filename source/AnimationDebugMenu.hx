@@ -11,8 +11,10 @@ import flixel.addons.ui.FlxUIDropDownMenu;
 import flixel.graphics.frames.FlxAtlasFrames;
 import flixel.group.FlxGroup.FlxTypedGroup;
 import flixel.text.FlxText;
+import flixel.tweens.FlxTween;
 import flixel.ui.FlxButton;
 import flixel.util.FlxColor;
+import flixel.util.FlxTimer;
 import haxe.Json;
 import lime.utils.Assets;
 
@@ -77,10 +79,7 @@ class AnimationDebugMenu extends FlxState
 			}
 		}
 		catch (err)
-		{
 			trace(err.stack);
-			// trace('Couldnt find file ' + charDropdown.selectedLabel + '.png or ' + charDropdown.selectedLabel + '.xml');
-		}
 	}
 
 	override public function create()
@@ -146,6 +145,19 @@ class AnimationDebugMenu extends FlxState
 
 		super.create();
 		displayChar.frames = sparrowFrames(charDropdown.selectedLabel);
+
+		var HelpText:FlxText = new FlxText(10, 660, FlxG.width, "Press F1 for help.");
+		HelpText.setFormat(null, 30, FlxColor.BLACK, LEFT);
+		add(HelpText);
+		new FlxTimer().start(5, function(tmr:FlxTimer)
+		{
+			FlxTween.tween(HelpText, {alpha: 0}, 1, {
+				onComplete: function(twn:FlxTween)
+				{
+					remove(HelpText);
+				}
+			});
+		});
 	}
 
 	override public function update(elapsed)
@@ -176,6 +188,9 @@ class AnimationDebugMenu extends FlxState
 
 			if (FlxG.keys.justPressed.R)
 				displayChar.updateHitbox();
+
+			if (FlxG.keys.justPressed.F1)
+				FlxG.openURL('https://github.com/Bogdan2D/FlixelSparrowAnimationDebug/wiki/3.-How-to-use.');
 
 			// CAMERA MOVEMENT
 			if (FlxG.keys.justPressed.X)
@@ -251,7 +266,7 @@ class AnimationDebugMenu extends FlxState
 
 	function updateDaHitbox()
 	{
-		var dataFile = Assets.getText('assets/data/offsets/' + charDropdown.selectedLabel + '.OFFSET');
+		var dataFile = Assets.getText('assets/data/offsets/' + charDropdown.selectedLabel + '.json');
 		daBoxData = Json.parse(dataFile)[Std.parseInt(arrayHitboxChoice.text)]; // make the 0 da choice of da user
 		displayChar.offset.x = daBoxData.x;
 		displayChar.offset.y = daBoxData.y;
