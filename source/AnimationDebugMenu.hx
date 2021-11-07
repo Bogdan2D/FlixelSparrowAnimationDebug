@@ -7,7 +7,9 @@ import flixel.FlxState;
 import flixel.addons.display.FlxBackdrop;
 import flixel.addons.display.FlxGridOverlay;
 import flixel.addons.ui.FlxInputText;
+import flixel.addons.ui.FlxUICheckBox;
 import flixel.addons.ui.FlxUIDropDownMenu;
+import flixel.addons.ui.FlxUINumericStepper;
 import flixel.graphics.frames.FlxAtlasFrames;
 import flixel.group.FlxGroup.FlxTypedGroup;
 import flixel.text.FlxText;
@@ -50,7 +52,9 @@ class AnimationDebugMenu extends FlxState
 	var playAnimBTN:FlxButton;
 
 	var loadHitboxBTN:FlxButton;
-	var arrayHitboxChoice:FlxInputText;
+	var arrayHitboxChoice:FlxUINumericStepper;
+
+	var antialiasingEnabled:FlxUICheckBox;
 
 	var moveSpeed:Int;
 	var daBoxData:HitboxData;
@@ -60,6 +64,8 @@ class AnimationDebugMenu extends FlxState
 	// Cameras
 	var prevCam:FlxCamera;
 	var uiCam:FlxCamera;
+
+	var bg:FlxSprite;
 
 	function playAnim()
 	{
@@ -100,7 +106,7 @@ class AnimationDebugMenu extends FlxState
 
 		uiCam.bgColor.alpha = 0;
 
-		var bg:FlxSprite = FlxGridOverlay.create(48, 48);
+		bg = FlxGridOverlay.create(48, 48);
 		bg.scrollFactor.set(0, 0);
 		add(bg);
 		// var repatShit:FlxBackdrop = new FlxBackdrop(bg, 1, 1);
@@ -108,8 +114,10 @@ class AnimationDebugMenu extends FlxState
 		charDropdown = new FlxUIDropDownMenu(10, 10, FlxUIDropDownMenu.makeStrIdLabelArray(charList, true));
 		animInput = new FlxInputText(137, 10, 250, 'idle', 15, FlxColor.BLACK, FlxColor.WHITE);
 		playAnimBTN = new FlxButton(400, 10, 'Play', playAnim);
-		loadHitboxBTN = new FlxButton(1140, 697, 'Load HITBOX', updateDaHitbox);
-		arrayHitboxChoice = new FlxInputText(1225, 696, 50, '0', 15, FlxColor.BLACK, FlxColor.WHITE);
+		loadHitboxBTN = new FlxButton(1137, 697, 'Load HITBOX', updateDaHitbox);
+		arrayHitboxChoice = new FlxUINumericStepper(1220, 700, 1, 0, 0);
+		antialiasingEnabled = new FlxUICheckBox(10, 700, null, null, "Antialiasing", 100, function() displayChar.antialiasing = antialiasingEnabled.checked);
+		antialiasingEnabled.textY -= 3;
 
 		offsetDisplayText = new FlxText(0, 0, FlxG.width);
 		offsetDisplayText.setFormat(null, 30, FlxColor.BLACK, FlxTextAlign.RIGHT);
@@ -120,7 +128,6 @@ class AnimationDebugMenu extends FlxState
 
 		//-----[CHARACTER]-----\\
 		displayChar = new FlxSprite();
-		displayChar.antialiasing = true;
 		playAnim();
 		FlxG.debugger.visible = false;
 		displayChar.screenCenter();
@@ -142,8 +149,13 @@ class AnimationDebugMenu extends FlxState
 		loadHitboxBTN.cameras = [uiCam];
 		add(arrayHitboxChoice);
 		arrayHitboxChoice.cameras = [uiCam];
+		add(antialiasingEnabled);
+		antialiasingEnabled.cameras = [uiCam];
 
+		//-------------\\
 		super.create();
+		prevCam.bgColor = FlxColor.BLACK;
+		//-------------\\
 		displayChar.frames = sparrowFrames(charDropdown.selectedLabel);
 
 		var HelpText:FlxText = new FlxText(10, 660, FlxG.width, "Press F1 for help.");
@@ -167,8 +179,7 @@ class AnimationDebugMenu extends FlxState
 		hitboxControl();
 		charDrag();
 
-		// Control basically
-		if (!animInput.hasFocus && !arrayHitboxChoice.hasFocus)
+		if (!animInput.hasFocus)
 		{
 			if (FlxG.keys.justPressed.F)
 				FlxG.fullscreen = !FlxG.fullscreen;
@@ -193,10 +204,11 @@ class AnimationDebugMenu extends FlxState
 				FlxG.openURL('https://github.com/Bogdan2D/FlixelSparrowAnimationDebug/wiki/3.-How-to-use.');
 
 			// CAMERA MOVEMENT
-			if (FlxG.keys.justPressed.X)
-				prevCam.zoom += 0.1;
-			if (FlxG.keys.justPressed.Z && prevCam.zoom != 1)
-				prevCam.zoom -= 0.1;
+			if (FlxG.keys.pressed.X)
+				prevCam.zoom += 0.05;
+
+			if (FlxG.keys.pressed.Z && prevCam.zoom > 1)
+				prevCam.zoom -= 0.05;
 		}
 
 		if (FlxG.keys.pressed.SHIFT)
@@ -204,8 +216,14 @@ class AnimationDebugMenu extends FlxState
 		else
 			moveSpeed = 1;
 
+		if (FlxG.keys.justPressed.NINE)
+		{
+			if (bg.alpha == 1)
+				bg.alpha = 0.5;
+			else
+				bg.alpha = 1;
+		}
 		displayHitbox.setPosition(displayChar.x, displayChar.y);
-		// displayHitbox.scale.set(displayChar.width / displayChar.width, displayChar.height / displayChar.height);
 		displayHitbox.makeGraphic(Std.parseInt('' + displayChar.width), Std.parseInt('' + displayChar.height), FlxColor.RED);
 		// ^^ lol this thing actually worked :)))
 		displayHitbox.updateHitbox();
@@ -217,7 +235,7 @@ class AnimationDebugMenu extends FlxState
 
 	function hitboxControl()
 	{
-		if (!animInput.hasFocus && !arrayHitboxChoice.hasFocus)
+		if (!animInput.hasFocus)
 		{
 			if (moveSpeed < 2)
 			{
@@ -242,9 +260,19 @@ class AnimationDebugMenu extends FlxState
 					displayChar.height += 1;
 			}
 			if (FlxG.keys.justPressed.P)
-				displayChar.scale.add(0.1, 0.1);
+			{
+				if (moveSpeed == 1)
+					displayChar.scale.add(0.01, 0.01);
+				else
+					displayChar.scale.add(0.1, 0.1);
+			}
 			if (FlxG.keys.justPressed.O)
-				displayChar.scale.add(-0.1, -0.1);
+			{
+				if (moveSpeed == 1)
+					displayChar.scale.add(-0.01, -0.01);
+				else
+					displayChar.scale.add(-0.1, -0.1);
+			}
 		}
 	}
 
@@ -267,7 +295,7 @@ class AnimationDebugMenu extends FlxState
 	function updateDaHitbox()
 	{
 		var dataFile = Assets.getText('assets/data/offsets/' + charDropdown.selectedLabel + '.json');
-		daBoxData = Json.parse(dataFile)[Std.parseInt(arrayHitboxChoice.text)]; // make the 0 da choice of da user
+		daBoxData = Json.parse(dataFile)[Std.parseInt(Std.string(arrayHitboxChoice.value))];
 		displayChar.offset.x = daBoxData.x;
 		displayChar.offset.y = daBoxData.y;
 		displayChar.width = daBoxData.width;
