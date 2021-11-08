@@ -36,7 +36,7 @@ typedef HitboxData =
 
 //-----[PATH SETUP]-----\\
 var path_charList:String = 'assets/data/charList.txt';
-var path_offset:String = 'assets/data/offset';
+var path_offset:String = 'assets/data/offsets';
 var path_charFolder:String = 'assets/images/char';
 
 //-----------------------\\
@@ -294,7 +294,7 @@ class AnimationDebugMenu extends FlxState
 
 	function updateDaHitbox()
 	{
-		var dataFile = Assets.getText('assets/data/offsets/' + charDropdown.selectedLabel + '.json');
+		var dataFile = Assets.getText('$path_offset/' + charDropdown.selectedLabel + '.json');
 		daBoxData = Json.parse(dataFile)[Std.parseInt(Std.string(arrayHitboxChoice.value))];
 		displayChar.offset.x = daBoxData.x;
 		displayChar.offset.y = daBoxData.y;
